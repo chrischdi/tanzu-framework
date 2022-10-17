@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1141,6 +1142,13 @@ func (c *TkgClient) PatchKubernetesVersionToKubeadmControlPlane(regionalClusterC
 		}
 		for k, v := range clusterUpgradeConfig.UpgradeComponentInfo.EtcdExtraArgs {
 			currentKCP.Spec.KubeadmConfigSpec.ClusterConfiguration.Etcd.Local.ExtraArgs[k] = v
+		}
+	}
+
+	if semver.Compare(clusterUpgradeConfig.UpgradeComponentInfo.KubernetesVersion, "v1.24.0") >= 0 {
+		newKCP := c.configurePodSecurityStandard(currentKCP)
+		if newKCP != nil {
+			currentKCP = newKCP
 		}
 	}
 
