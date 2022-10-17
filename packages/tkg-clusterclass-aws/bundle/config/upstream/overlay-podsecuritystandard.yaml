@@ -1,0 +1,115 @@
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:data", "data")
+
+#@overlay/match by=overlay.subset({"kind":"ClusterClass"})
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+spec:
+  #@overlay/match missing_ok=True
+  variables:
+  #@overlay/remove
+  #@overlay/match by=overlay.map_key("name"),missing_ok=True
+  - name: podSecurityStandard
+  #@overlay/append
+  - name: podSecurityStandard
+    required: false
+    schema:
+      openAPIV3Schema:
+        type: object
+        default: {}
+        properties:
+          disabled:
+            type: boolean
+            description: "disabled disables the patches for Pod Security Standard via AdmissionConfiguration."
+          enforce:
+            type: string
+            enum: ["", "privileged", "baseline", "restricted"]
+            description: "enforce sets the level for the enforce PodSecurityConfiguration mode. One of \"\", privileged, baseline, restricted."
+            nullable: true
+          enforceVersion:
+            type: string
+            description: "enforceVersion sets the version for the enforce PodSecurityConfiguration mode."
+          audit:
+            type: string
+            enum: ["", "privileged", "baseline", "restricted"]
+            description: "audit sets the level for the audit PodSecurityConfiguration mode. One of \"\", privileged, baseline, restricted."
+            nullable: true
+          auditVersion:
+            type: string
+            description: "auditVersion sets the version for the audit PodSecurityConfiguration mode."
+          warn:
+            type: string
+            enum: ["", "privileged", "baseline", "restricted"]
+            description: "warn sets the level for the warn PodSecurityConfiguration mode. One of \"\", privileged, baseline, restricted."
+            nullable: true
+          warnVersion:
+            type: string
+            description: "warnVersion sets the version for the warn PodSecurityConfiguration mode."
+          exemptions:
+            type: object
+            description: "excemption configuration for the PodSecurityConfiguration."
+            properties:
+              namespaces:
+                type: array
+                items:
+                  type: string
+                description: "namespaces excluded to apply PodSecurityConfiguration Admission."
+  #@overlay/match missing_ok=True
+  patches:
+  #@overlay/remove
+  #@overlay/match by=overlay.map_key("name"),missing_ok=True
+  - name: podSecurityStandard
+  #@overlay/append
+  - name: podSecurityStandard
+    description: "Adds an admission configuration for PodSecurity to the kube-apiserver."
+    definitions:
+    - selector:
+        apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+        kind: KubeadmControlPlaneTemplate
+        matchResources:
+          controlPlane: true
+      jsonPatches:
+      - op: add
+        path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/admission-control-config-file"
+        value: "/etc/kubernetes/kube-apiserver-admission-pss.yaml"
+      - op: add
+        path: "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraVolumes/-"
+        value:
+          name: admission-pss
+          hostPath: /etc/kubernetes/kube-apiserver-admission-pss.yaml
+          mountPath: /etc/kubernetes/kube-apiserver-admission-pss.yaml
+          readOnly: true
+          pathType: "File"
+      - op: add
+        path: "/spec/template/spec/kubeadmConfigSpec/files/-"
+        valueFrom:
+          template: |-
+            content: |-
+              {{ $namespace_exemptions := printf "%q, %q, %q" "kube-system" "tkg-system" "capz-system" }}
+              {{ $defaultWarnAudit := "baseline" }}
+              {{ if .podSecurityStandard.exemptions.namespaces }}
+                {{ range $namespace := .podSecurityStandard.exemptions.namespaces }}
+                  {{ $namespace_exemptions = printf "%s, %q" $namespace_exemptions $namespace }}
+                {{ end }}
+              {{ end }}
+              apiVersion: apiserver.config.k8s.io/v1
+              kind: AdmissionConfiguration
+              plugins:
+              - name: PodSecurity
+                configuration:
+                  apiVersion: pod-security.admission.config.k8s.io/v1beta1
+                  kind: PodSecurityConfiguration
+                  defaults:
+                    enforce: "{{ if .podSecurityStandard.enforce }}{{ .podSecurityStandard.enforce }}{{ end }}"
+                    enforce-version: "{{ if .podSecurityStandard.enforceVersion -}}{{ .podSecurityStandard.enforceVersion }}{{ else }}latest{{- end }}"
+                    audit: "{{ if .podSecurityStandard.audit }}{{ .podSecurityStandard.audit }}{{ else }}{{ $defaultWarnAudit }}{{ end }}"
+                    audit-version: "{{ if .podSecurityStandard.auditVersion -}}{{ .podSecurityStandard.auditVersion }}{{ else }}latest{{- end }}"
+                    warn: "{{ if .podSecurityStandard.warn }}{{ .podSecurityStandard.warn }}{{ else }}{{ $defaultWarnAudit }}{{ end }}"
+                    warn-version: "{{ if .podSecurityStandard.warnVersion -}}{{ .podSecurityStandard.warnVersion }}{{ else }}latest{{- end }}"
+                  exemptions:
+                    usernames: []
+                    runtimeClasses: []
+                    namespaces: [{{ $namespace_exemptions }}]
+            path: /etc/kubernetes/kube-apiserver-admission-pss.yaml
+    enabledIf: '{{ and (not .podSecurityStandard.disabled) (semverCompare ">= v1.24" .builtin.controlPlane.version) }}'
