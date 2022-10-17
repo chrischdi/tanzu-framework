@@ -191,6 +191,11 @@ const (
 	EnableAuditLogging  = "ENABLE_AUDIT_LOGGING"
 	TKGIPFamily         = "TKG_IP_FAMILY"
 
+	PodSecurityStandardDisabled = "POD_SECURITY_STANDARD_DISABLED"
+	PodSecurityStandardAudit    = "POD_SECURITY_STANDARD_AUDIT"
+	PodSecurityStandardWarn     = "POD_SECURITY_STANDARD_WARN"
+	PodSecurityStandardEnforce  = "POD_SECURITY_STANDARD_ENFORCE"
+
 	ConfigVariableOSName    = "OS_NAME"
 	ConfigVariableOSVersion = "OS_VERSION"
 	ConfigVariableOSArch    = "OS_ARCH"
