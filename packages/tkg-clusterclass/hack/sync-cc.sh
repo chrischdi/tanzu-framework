@@ -16,7 +16,5 @@ for infra in $infras; do
    ls ${PROVIDERS_DIR}/infrastructure-${infra}/v*/cconly/*
    rm ${PKGS_DIR}/tkg-clusterclass-${infra}/bundle/config/upstream/*
    cp ${PROVIDERS_DIR}/infrastructure-${infra}/v*/cconly/* ${PKGS_DIR}/tkg-clusterclass-${infra}/bundle/config/upstream/
-   # also copy over overlays common for all providers
-   cp ${PROVIDERS_DIR}/yttcconly/* ${PKGS_DIR}/tkg-clusterclass-${infra}/bundle/config/upstream/
 done
 

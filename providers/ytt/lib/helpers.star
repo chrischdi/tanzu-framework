@@ -367,9 +367,9 @@ def enable_csi_driver():
   return False
 end
 
-def enable_pod_security_standard():
+def activate_pod_security_standard():
   # disable if pod security is explicitly disabled
-  if not data.values.POD_SECURITY_STANDARD_DISABLED or data.values.POD_SECURITY_STANDARD_DISABLED:
+  if not data.values.POD_SECURITY_STANDARD_DEACTIVATED or data.values.POD_SECURITY_STANDARD_DEACTIVATED:
     return False
   end
   tkrVersion = get_tkr_version_from_tkr_name(data.values.KUBERNETES_RELEASE)

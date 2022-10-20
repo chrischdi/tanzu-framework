@@ -105,7 +105,7 @@ ENABLE_AUDIT_LOGGING: "true", "false"
 OS_NAME: "photon", "ubuntu", "amazon"
 
 # pod security standards
-POD_SECURITY_STANDARD_DISABLED: "true", "false"
+POD_SECURITY_STANDARD_DEACTIVATED: "true", "false"
 
 POD_SECURITY_STANDARD_AUDIT: "", "baseline", "restricted", "enforce"
 POD_SECURITY_STANDARD_WARN: "", "baseline", "restricted", "enforce"

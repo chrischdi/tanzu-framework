@@ -3,7 +3,7 @@
 #@ load("@ytt:base64", "base64")
 #@ load("@ytt:yaml", "yaml")
 #@ load("@ytt:version", "version")
-#@ load("/lib/helpers.star", "enable_pod_security_standard")
+#@ load("/lib/helpers.star", "activate_pod_security_standard")
 
 #@ def kube_apiserver_admission_pss():
 apiVersion: apiserver.config.k8s.io/v1
@@ -26,7 +26,7 @@ plugins:
       namespaces: [kube-system]
 #@ end
 
-#@ if enable_pod_security_standard():
+#@ if activate_pod_security_standard():
 #@overlay/match by=overlay.subset({"kind":"KubeadmControlPlane"})
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
