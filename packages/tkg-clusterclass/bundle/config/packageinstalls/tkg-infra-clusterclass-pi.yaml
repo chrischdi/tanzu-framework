@@ -129,6 +129,9 @@ stringData:
                 nullable: true
               enforceVersion:
                 type: string
+                #! Version defaults to v1.24 for now. When v1.25 is part of tanzu-framework, the defaulting should be done
+                #! by a defaulting webhook instead for extended logic.
+                default: "v1.24"
                 description: "enforceVersion sets the version for the enforce PodSecurityConfiguration mode."
               audit:
                 type: string
@@ -137,6 +140,9 @@ stringData:
                 nullable: true
               auditVersion:
                 type: string
+                #! Version defaults to v1.24 for now. When v1.25 is part of tanzu-framework, the defaulting should be done
+                #! by a defaulting webhook instead for extended logic.
+                default: "v1.24"
                 description: "auditVersion sets the version for the audit PodSecurityConfiguration mode."
               warn:
                 type: string
@@ -145,10 +151,13 @@ stringData:
                 nullable: true
               warnVersion:
                 type: string
+                #! Version defaults to v1.24 for now. When v1.25 is part of tanzu-framework, the defaulting should be done
+                #! by a defaulting webhook instead for extended logic.
+                default: "v1.24"
                 description: "warnVersion sets the version for the warn PodSecurityConfiguration mode."
               exemptions:
                 type: object
-                description: "excemption configuration for the PodSecurityConfiguration."
+                description: "exemption configuration for the PodSecurityConfiguration."
                 properties:
                   namespaces:
                     type: array
@@ -186,16 +195,16 @@ stringData:
             valueFrom:
               template: |-
                 content: |-
-                  {{ $namespace_exemptions := "kube-system" }}
-                  {{ range ("(@= pod_security_namespace_exemptions @)" | split ",") }}
-                    {{ $namespace_exemptions := printf "%s, %q" $namespace_exemptions . }}
-                  {{ end }}
+                  {{- $namespace_exemptions := printf "%q" "kube-system" -}}
+                  {{- range ("(@= pod_security_namespace_exemptions @)" | split ",") -}}
+                    {{ $namespace_exemptions = printf "%s, %q" $namespace_exemptions . }}
+                  {{- end }}
                   {{ $defaultWarnAudit := "baseline" }}
-                  {{ if .podSecurityStandard.exemptions.namespaces }}
-                    {{ range $namespace := .podSecurityStandard.exemptions.namespaces }}
-                      {{ $namespace_exemptions = printf "%s, %q" $namespace_exemptions $namespace }}
-                    {{ end }}
-                  {{ end }}
+                  {{- if .podSecurityStandard.exemptions.namespaces -}}
+                    {{ range $namespace := .podSecurityStandard.exemptions.namespaces -}}
+                      {{ $namespace_exemptions = printf "%s, %q" $namespace_exemptions $namespace -}}
+                    {{- end -}}
+                  {{- end -}}
                   apiVersion: apiserver.config.k8s.io/v1
                   kind: AdmissionConfiguration
                   plugins:
@@ -204,12 +213,22 @@ stringData:
                       apiVersion: pod-security.admission.config.k8s.io/v1beta1
                       kind: PodSecurityConfiguration
                       defaults:
-                        enforce: "{{ if .podSecurityStandard.enforce }}{{ .podSecurityStandard.enforce }}{{ end }}"
-                        enforce-version: "{{ if .podSecurityStandard.enforceVersion -}}{{ .podSecurityStandard.enforceVersion }}{{ else }}latest{{- end }}"
-                        audit: "{{ if .podSecurityStandard.audit }}{{ .podSecurityStandard.audit }}{{ else }}{{ $defaultWarnAudit }}{{ end }}"
-                        audit-version: "{{ if .podSecurityStandard.auditVersion -}}{{ .podSecurityStandard.auditVersion }}{{ else }}latest{{- end }}"
-                        warn: "{{ if .podSecurityStandard.warn }}{{ .podSecurityStandard.warn }}{{ else }}{{ $defaultWarnAudit }}{{ end }}"
-                        warn-version: "{{ if .podSecurityStandard.warnVersion -}}{{ .podSecurityStandard.warnVersion }}{{ else }}latest{{- end }}"
+                        enforce: "{{ if .podSecurityStandard.enforce -}}
+                            {{ .podSecurityStandard.enforce }}
+                          {{- end }}"
+                        enforce-version: "{{ .podSecurityStandard.enforceVersion -}}"
+                        audit: "{{ if .podSecurityStandard.audit -}}
+                            {{ .podSecurityStandard.audit }}
+                          {{- else -}}
+                            {{ $defaultWarnAudit }}
+                          {{- end }}"
+                        audit-version: "{{ .podSecurityStandard.auditVersion -}}"
+                        warn: "{{ if .podSecurityStandard.warn -}}
+                            {{ .podSecurityStandard.warn }}
+                          {{- else -}}
+                            {{ $defaultWarnAudit }}
+                          {{- end }}"
+                        warn-version: "{{ .podSecurityStandard.warnVersion -}}"
                       exemptions:
                         usernames: []
                         runtimeClasses: []
