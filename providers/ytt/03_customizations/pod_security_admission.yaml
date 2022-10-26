@@ -7,12 +7,15 @@
 
 #@ def get_pod_security_namespace_exemptions():
 
-#@ if data.values.PROVIDER_TYPE == "azure":
-#@   return ["kube-system","tkg-system","capz-system"]
+#@ if data.values.TKG_CLUSTER_ROLE == "management":
+#@   if data.values.PROVIDER_TYPE == "azure":
+#@     return ["kube-system","tkg-system","capz-system"]
+#@   end
+#@   if data.values.PROVIDER_TYPE == "docker":
+#@     return ["kube-system","tkg-system","capd-system"]
+#@   end
 #@ end
-#@ if data.values.PROVIDER_TYPE == "docker":
-#@   return ["kube-system","tkg-system","capd-system"]
-#@ end
+#@
 #@ return ["kube-system","tkg-system"]
 
 #@ end

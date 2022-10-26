@@ -36,20 +36,6 @@
 
 #@ end
 
-#@ def get_pod_security_namespace_exemptions():
-
-#@ if data.values.clusterclassInfraPackageValues.infraProvider == "azure":
-#@   return "tkg-system,capz-system"
-#@ end
-#@ if data.values.clusterclassInfraPackageValues.infraProvider == "docker":
-#@   return "tkg-system,capd-system"
-#@ end
-#@ return "tkg-system"
-
-#@ end
-
-#@ pod_security_namespace_exemptions = get_pod_security_namespace_exemptions()
-
 ---
 apiVersion: packaging.carvel.dev/v1alpha1
 kind: PackageInstall
@@ -198,10 +184,7 @@ stringData:
             valueFrom:
               template: |-
                 content: |-
-                  {{- $namespace_exemptions := printf "%q" "kube-system" -}}
-                  {{- range ("(@= pod_security_namespace_exemptions @)" | split ",") -}}
-                    {{ $namespace_exemptions = printf "%s, %q" $namespace_exemptions . }}
-                  {{- end }}
+                  {{- $namespace_exemptions := printf "%q, %q" "kube-system" "tkg-system" -}}
                   {{ $defaultWarnAudit := "baseline" }}
                   {{- if .podSecurityStandard.exemptions.namespaces -}}
                     {{ range $namespace := .podSecurityStandard.exemptions.namespaces -}}

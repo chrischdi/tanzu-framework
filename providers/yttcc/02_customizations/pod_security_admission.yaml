@@ -1,0 +1,29 @@
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:data", "data")
+
+#@ def get_pod_security_namespace_exemptions():
+
+#@ if data.values.PROVIDER_TYPE == "azure" and data.values.TKG_CLUSTER_ROLE == "management":
+#@   return ["capz-system"]
+#@ end
+#@ if data.values.PROVIDER_TYPE == "docker" and data.values.TKG_CLUSTER_ROLE == "management":
+#@   return ["capd-system"]
+#@ end
+#@ return []
+
+#@ end
+
+#@ if data.values.TKG_CLUSTER_ROLE == "management" and data.values.PROVIDER_TYPE in ["azure","docker"]:
+#@overlay/match by=overlay.subset({"kind":"Cluster"})
+---
+#@overlay/match-child-defaults missing_ok=True
+spec:
+  topology:
+    variables:
+    #@overlay/match by=overlay.map_key("name"),missing_ok=True
+    - name: podSecurityStandard
+      value:
+        exemptions:
+          namespaces: #@ get_pod_security_namespace_exemptions()
+
+#@ end
